@@ -6,7 +6,8 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
 	protobuf-compiler \
 	libudunits2-dev \
 	libgdal-dev \
-	build-essential
+	build-essential\
+	libsodium-dev
 
 RUN apt-get update && \
 	apt-get upgrade -y && \

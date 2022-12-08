@@ -1,12 +1,6 @@
-if( !is.element("RMySQL",rownames(installed.packages() ) ) ){
-  install.packages("RMySQL")
-}
-
 source("config.R", local = TRUE)
 
 library(RMySQL)
-
-
 
 variant_distribution <- function(map, metadata, epidem,  mindate, maxdate, switch = "VocVoi"){
   

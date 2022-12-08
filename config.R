@@ -17,7 +17,7 @@ HOST_MYSQL <- '157.90.212.15'
 PORT_MYSQL <- 3306
 DB_MYSQL <- 'rissatip_dbsatipo'
 
-# 
+
 # USER_MYSQL <- "admin"
 # PASSWORD_MYSQL <- "satipored2022"
 # HOST_MYSQL <- 'localhost'

@@ -7,6 +7,7 @@
 # . protobuf-compiler
 # . libudunits2-dev
 # . libgdal-dev
+# . libsodium-dev
 
 ################################################################################
 # Install missing packages
@@ -28,6 +29,10 @@ if( !is.element("devtools",rownames(installed.packages() ) ) ){
 
 library(devtools)
 
+if( !is.element("rlang",rownames(installed.packages() ) )  ){
+  install_version("rlang", version = "1.0.6", repos = "http://cran.us.r-project.org")
+}
+library(rlang)
 
 ################################################################################
 
@@ -36,7 +41,7 @@ dependencies <- c("shiny","shinyauthr","shinycssloaders","shinythemes","plotly",
                   "remotes","dplyr","rgdal","sp","sf","geojsonsf","DT","htmlwidgets", 
                   "leaflet","leaflet.minicharts","shinyjs","viridisLite","viridis",
                   "leaflet.extras", "leaflet.extras2", "RColorBrewer","stringr",
-                  "tidyverse","ggplot2","splitstackshape")
+                  "tidyverse","ggplot2","splitstackshape","RMySQL")
 
 ################################################################################
 # Package R dependencies
@@ -51,7 +56,6 @@ if( !is.element("epical",rownames(installed.packages() ) ) ){
 }
 
 
-library(rlang)
 library(splines)
 library(epical)
 library(utils)
