@@ -2,6 +2,8 @@ if( !is.element("RMySQL",rownames(installed.packages() ) ) ){
   install.packages("RMySQL")
 }
 
+source("config.R", local = TRUE)
+
 library(RMySQL)
 
 
@@ -145,66 +147,83 @@ matrix_distribution <- function(metadata, type, upload, prov, motivo){
 freq_voc_voi <- function(data, lin){
   
   #if(is.element(lin, unique(data$lineage))){
-    dd1 = strsplit(lin, split = ",")
-    data <- data %>% filter(lineage == dd1[[1]])
-    data <- data %>% dplyr::group_by(Date, epi_week) %>% dplyr::summarise(Frecuency = n())
-    return(data)
+  dd1 = strsplit(lin, split = ",")
+  data <- data %>% filter(lineage == dd1[[1]])
+  data <- data %>% dplyr::group_by(Date, epi_week) %>% dplyr::summarise(Frecuency = n())
+  return(data)
   #} else{
-   # return(data.frame(Date = NULL,  epi_week = NULL,  Frecuency = NULL))
+  # return(data.frame(Date = NULL,  epi_week = NULL,  Frecuency = NULL))
   #}
   
 }
 
 ## data from MySQL
+##SELECT LOCALIDAD,COUNT(LOCALIDAD) AS N FROM `epidemiodb` WHERE YEAR = 2022 GROUP BY LOCALIDAD
 
-metadata <- function(db, tabla, corrida){
+metadata <- function(tabla, fxd = FALSE){
   
   con <- dbConnect(MySQL(),
-                   user = 'ingreso',
-                   password = '123ingreso321',
-                   host = 'localhost',
-                   dbname = db)
-  query = paste0("SELECT * FROM `",tabla,"` WHERE `CORRIDA` = ",corrida,";")
-  dbSendQuery(con, "SET NAMES utf8mb4;")
-  on.exit(dbDisconnect(con))
-  rs = dbSendQuery(con, query);
-  df = fetch(rs, -1);
-  dbClearResult(rs)
-  return(df)
-}
-
-metadata_sql <- function(oficio = NULL){
-  
-  con <- dbConnect(MySQL(),
-                   user = 'ingreso',
-                   password = '123ingreso321',
-                   host = 'localhost',
-                   dbname = 'seqcoviddb')
-  
-  
-  query = paste0("SELECT NUMERACION_PLACA,NETLAB,OFICIO,DNI_CE,CORRIDA,PLACA FROM `metadata` WHERE `OFICIO` LIKE '",
-                 oficio,"' AND `CORRIDA` IS NULL AND `DNI_CE` IS NOT NULL AND `PLACA` IS NULL AND `CORRIDA` IS NULL ORDER BY `metadata`.`FECHA_INGRESO_BASE` ASC;")
-  
-  dbSendQuery(con, "SET NAMES utf8mb4;")
-  on.exit(dbDisconnect(con))
-  rs = dbSendQuery(con, query);
-  df = fetch(rs, -1);
-  dbClearResult(rs)
-  return(df)
-}
-
-metadataOrder <- function(corrida, placa, reasig = FALSE){
-  
-  con <- dbConnect(MySQL(),
-                   user = 'root',
-                   password = 'maq12345',
-                   host = 'localhost',
-                   dbname = 'seqcoviddb') ### cambiar a seqcoviddb
-  if(isTRUE(reasig)){
-    query = paste0("SELECT NUMERACION_PLACA,NETLAB,OFICIO,DNI_CE,CORRIDA,PLACA FROM `metadata` WHERE `CORRIDA` = ",corrida," AND `PLACA` = '",placa,"' ORDER BY `metadata`.`FECHA_INGRESO_BASE` ASC;")  
+                   user = USER_MYSQL,
+                   password = PASSWORD_MYSQL,
+                   host = HOST_MYSQL,
+                   dbname = DB_MYSQL, port = PORT_MYSQL)
+  if(isTRUE(fxd)){
+    query = paste0("SELECT * FROM `",tabla,"`;")
   }else{
-    query = paste0("SELECT NUMERACION_PLACA FROM `metadata` WHERE `CORRIDA` = ",corrida," AND `PLACA` = '",placa,"' ORDER BY `metadata`.`FECHA_INGRESO_BASE` ASC;")
+    query = paste0("SELECT * FROM `",tabla,"` WHERE `PRIORITARIO` LIKE 'SI';")
   }
+  
+  dbSendQuery(con, "SET NAMES utf8mb4;")
+  on.exit(dbDisconnect(con))
+  rs = dbSendQuery(con, query);
+  df = fetch(rs, -1);
+  dbClearResult(rs)
+  return(df)
+}
+
+metadata_epidemio <- function(year, map = TRUE, distrito){
+  
+  con <- dbConnect(MySQL(),
+                   user = USER_MYSQL,
+                   password = PASSWORD_MYSQL,
+                   host = HOST_MYSQL,
+                   dbname = DB_MYSQL, port = PORT_MYSQL)
+  if(map == TRUE){
+    query = paste0("SELECT DISTRITO,COUNT(DISTRITO) AS N FROM `epidemiodb` WHERE YEAR = ",
+                   year," GROUP BY DISTRITO;")
+    
+  }else{
+    if(distrito == "TOTAL"){
+      query = paste0("SELECT SEMANA,COUNT(SEMANA) AS N FROM `epidemiodb` WHERE YEAR = ",
+                     year," GROUP BY SEMANA;")
+    }else{
+      query = paste0("SELECT SEMANA,COUNT(SEMANA) AS N FROM `epidemiodb` WHERE YEAR = ",
+                     year," AND DISTRITO = '",distrito,"' GROUP BY SEMANA;")
+    }
+  }
+  
+  dbSendQuery(con, "SET NAMES utf8mb4;")
+  on.exit(dbDisconnect(con))
+  rs = dbSendQuery(con, query);
+  df = fetch(rs, -1);
+  dbClearResult(rs)
+  return(df)
+}
+
+localidades_mysql <- function(prioritario, distrito){
+  
+  con <- dbConnect(MySQL(),
+                   user = USER_MYSQL,
+                   password = PASSWORD_MYSQL,
+                   host = HOST_MYSQL,
+                   dbname = DB_MYSQL, port = PORT_MYSQL)
+  if(prioritario == "PRIORITARIOS"){
+    query = paste0("SELECT * FROM `satipolocalidades` WHERE `PRIORITARIO` LIKE 'SI' AND DISTRITO ='", distrito,"';")
+  }else{
+    query = paste0("SELECT * FROM `satipolocalidades` WHERE `PRIORITARIO` IS NULL AND DISTRITO ='",distrito,"';")
+  }
+  
+  
   dbSendQuery(con, "SET NAMES utf8mb4;")
   on.exit(dbDisconnect(con))
   rs = dbSendQuery(con, query);
@@ -215,96 +234,195 @@ metadataOrder <- function(corrida, placa, reasig = FALSE){
 
 
 
-metadataSendquery <- function(netlab, oficio){
+VA_sql <- function(distrito, fecha, eess, localidad, colecta,
+                   iphh, iphn, cespecie, hcolecta, especie,
+                   ncolecta, temperatura, hr, norte, este){
+  
+  
+  if(length(fecha) == 0){
+    fecha <- 'NULL'
+  }
+  
+  if(is.null(iphh) | is.na(iphh)){
+    iphh <- 'NULL'
+  }
+  
+  if(is.null(iphn) | is.na(iphn)){
+    iphn <- 'NULL'
+  }
+  
+  if(is.null(cespecie) | is.na(cespecie)){
+    cespecie <- 'NULL'
+  }
+  
+  if(is.null(hcolecta) | is.na(hcolecta) | nchar(hcolecta) == 0){
+    hcolecta <- 'NULL'
+  }
+  
+  if(is.null(ncolecta) | is.na(ncolecta)){
+    ncolecta <- 'NULL'
+  }
+  
+  if(is.null(temperatura) | is.na(temperatura)){
+    temperatura <- 'NULL'
+  }
+  
+  if(is.null(hr) | is.na(hr)){
+    hr <- 'NULL'
+  }
+  
+  if(is.null(norte) | is.na(norte)){
+    norte <- 'NULL'
+  }
+  
+  if(is.null(este) | is.na(este)){
+    este <- 'NULL'
+  }
   
   con <- dbConnect(MySQL(),
-                   user = 'root',
-                   password = 'maq12345',
-                   host = 'localhost',
-                   dbname = 'seqcoviddb')
-  query = paste0("INSERT INTO `metadata` (`NETLAB`, `OFICIO`, `CT`, `CT2`, `FECHA_TM`, `REGION`, `PROCEDENCIA`, `PROVINCIA`, `DISTRITO`, `APELLIDO_NOMBRE`, `DNI_CE`, `EDAD`, `SEXO`, `VACUNADO`, `MARCA_PRIMERAS_DOSIS`, `1DOSIS`, `2DOSIS`, `MARCA_3DOSIS`, `3DOSIS`, `HOSPITALIZACION`, `MOTIVO`, `FALLECIDO`, `NUMERACION_PLACA`, `PLACA`, `CORRIDA`, `RECEPCIONADA`, `CODIGO`, `VERIFICADO`, `FECHA_INGRESO_BASE`) VALUES ('",
-                 netlab,"','",oficio,"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, CURRENT_TIMESTAMP);")
-  rs = dbSendQuery(con, query);
-  #df = fetch(rs, -1);
-  dbDisconnect(con)
-  #return(df)
-}
-
-
-metadaupdate <- function(oficio){
+                   user = USER_MYSQL,
+                   password = PASSWORD_MYSQL,
+                   host = HOST_MYSQL,
+                   dbname = DB_MYSQL, port = PORT_MYSQL)
   
-  con <- dbConnect(MySQL(),
-                   user = 'root',
-                   password = 'maq12345',
-                   host = 'localhost',
-                   dbname = 'seqcoviddb')
-  query = paste0("SELECT NETLAB, OFICIO, CT, CT2, FECHA_TM, MOTIVO, DNI_CE FROM `metadata`  WHERE `OFICIO` = '",oficio,"' ORDER BY `metadata`.`FECHA_INGRESO_BASE` ASC;")
+  query <- paste0("INSERT INTO `controladultos` ",
+                  "(`ID`, `DISTRITO`, `FECHA`, `EESS`,",
+                  " `LOCALIDAD`, `COLECTA`, `IPHH`, `IPHN`,",
+                  " `CANTIDADESPECIE`, `HORASCOLECTA`, ",
+                  " `ESPECIE`, `NCOLECTA`, `TEMPERATURA`,",
+                  " `HR`, `VIVIENDA`, `NORTE`, `ESTE`)",
+                  " VALUES (NULL, '",distrito,"', '",fecha,
+                  "', '",eess,"', '",localidad,"', '",colecta,"', '",iphh,
+                  "', '",iphn,"', '",cespecie,"', '",hcolecta,
+                  "', '",especie,"', '",ncolecta,"', '",temperatura,
+                  "', '",hr,"', NULL, '",norte,"', '",este,"');")
+  query <-  gsub("'NULL'", "NULL", query, fixed = TRUE)
+  dbSendQuery(con, "SET NAMES utf8mb4;")
+  on.exit(dbDisconnect(con))
   rs = dbSendQuery(con, query);
   df = fetch(rs, -1);
-  dbDisconnect(con)
+  dbClearResult(rs)
+  return(df)
+}
+
+CL_sql <- function(distrito, eess, localidad, clasificacion,
+                   tipo, extension, metodo, larvicida, especie, 
+                   il_pre, il_post,fecha,  norte, este){
+  
+  
+  if(length(fecha) == 0){
+    fecha <- 'NULL'
+  }
+
+  if(is.null(extension) | is.na(extension) | nchar(extension) == 0){
+    extension <- 'NULL'
+  }
+  
+  if(is.null(larvicida) | is.na(larvicida)){
+    larvicida <- 'NULL'
+  }
+  
+  if(is.null(il_pre) | is.na(il_pre)){
+    il_pre <- 'NULL'
+  }
+  
+  if(is.null(il_post) | is.na(il_post)){
+    il_post <- 'NULL'
+  }
+  
+  if(is.null(norte) | is.na(norte)){
+    norte <- 'NULL'
+  }
+  
+  if(is.null(este) | is.na(este)){
+    este <- 'NULL'
+  }
+  
+  con <- dbConnect(MySQL(),
+                   user = USER_MYSQL,
+                   password = PASSWORD_MYSQL,
+                   host = HOST_MYSQL,
+                   dbname = DB_MYSQL, port = PORT_MYSQL)
+  
+  query <- paste0("INSERT INTO `controlcriaderos` ",
+                  "(`ID`, `DISTRITO`, `EESS`,",
+                  " `LOCALIDAD`, `CLASIFICACION`, `TIPO`, `EXTENSION`,",
+                  " `METODO`, `LARVICIDA`, "," `ESPECIE`,",
+                  " `IL-PRE`, `IL-POST`,",
+                  " `FECHA`, `NORTE`, `ESTE`)",
+                  " VALUES (NULL, '",distrito,"', '",eess,
+                  "', '",localidad,"', '",clasificacion,"', '",tipo,"', '",extension,
+                  "', '",metodo,"', '",larvicida,"', '",especie,
+                  "', '",il_pre,"', '",il_post,"', '",fecha,"', '",norte,"', '",este,"');")
+  query <-  gsub("'NULL'", "NULL", query, fixed = TRUE)
+  dbSendQuery(con, "SET NAMES utf8mb4;")
+  on.exit(dbDisconnect(con))
+  rs = dbSendQuery(con, query);
+  df = fetch(rs, -1);
+  dbClearResult(rs)
   return(df)
 }
 
 
-delete_sql <- function(query){
-  
+vectorAdulto_mysql <- function(distrito, localidad, eess, start, end){
   con <- dbConnect(MySQL(),
-                   user = 'root',
-                   password = 'maq12345',
-                   host = 'localhost',
-                   dbname = 'seqcoviddb')
-  #query = paste0("SELECT NETLAB, OFICIO, CT, CT2, FECHA_TM, MOTIVO, CODIGO  FROM `metadata`  WHERE `OFICIO` = '",oficio,"' ORDER BY `metadata`.`FECHA_TM` DESC;")
+                   user = USER_MYSQL,
+                   password = PASSWORD_MYSQL,
+                   host = HOST_MYSQL,
+                   dbname = DB_MYSQL, port = PORT_MYSQL)
+  
+  query = paste0("SELECT * FROM `controladultos` WHERE `DISTRITO` LIKE '",distrito,"' AND `LOCALIDAD` = '",
+                 localidad,"' AND `EESS` = '",eess,"' AND `FECHA` BETWEEN '",start,"' AND '",end,"';")
+  
+  dbSendQuery(con, "SET NAMES utf8mb4;")
+  on.exit(dbDisconnect(con))
   rs = dbSendQuery(con, query);
   df = fetch(rs, -1);
-  dbDisconnect(con)
+  dbClearResult(rs)
   return(df)
 }
 
-library(utils)
-
-update_sql <- function(sql_id, ct, ct2, fecha_tm, motivo, dni){
-  
-  if(is.null(ct) | is.na(ct)){
-    ct <- 'NULL'
-  }
-  
-  if(is.null(ct2) | is.na(ct2)){
-    ct2 <- 'NULL'
-  }
-  
-  if(length(fecha_tm) == 0){
-    fecha_tm <- 'NULL'
-  }
-  
-  if(is.null(dni) | is.na(dni) | nchar(dni) == 0){
-    dni <- 'NULL'
-  }
+criadero_mysql <- function(distrito, localidad, eess, start, end){
   con <- dbConnect(MySQL(),
-                   user = 'root',
-                   password = 'maq12345',
-                   host = 'localhost',
-                   dbname = 'seqcoviddb')
-  query <- paste0("UPDATE `metadata` SET `CT` = '",
-                  ct,"', `CT2` = '",ct2,"', `FECHA_TM` = '",
-                  fecha_tm,"', `MOTIVO` = '",motivo,"', `DNI_CE` = '",
-                  dni,"' WHERE `metadata`.`NETLAB` = \'",sql_id,"\'")
-  query <- gsub("'NULL'", "NULL", query, fixed = TRUE)
+                   user = USER_MYSQL,
+                   password = PASSWORD_MYSQL,
+                   host = HOST_MYSQL,
+                   dbname = DB_MYSQL, port = PORT_MYSQL)
+  
+  query = paste0("SELECT * FROM `controlcriaderos` WHERE `DISTRITO` LIKE '",distrito,"' AND `LOCALIDAD` = '",
+                 localidad,"' AND `EESS` = '",eess,"' AND `FECHA` BETWEEN '",start,"' AND '",end,"';")
+  
+  dbSendQuery(con, "SET NAMES utf8mb4;")
+  on.exit(dbDisconnect(con))
   rs = dbSendQuery(con, query);
   df = fetch(rs, -1);
-  dbDisconnect(con)
+  dbClearResult(rs)
   return(df)
 }
-
 
 metadata_setnumber <- function(netlab, number){
   con <- dbConnect(MySQL(),
                    user = 'ingreso',
                    password = '123ingreso321',
-                   host = 'localhost',
+                   host = HOST_MYSQL,
                    dbname = 'seqcoviddb')
   query <- paste0("UPDATE `metadata` SET `NUMERACION_PLACA` = '",
                   number,"' WHERE `metadata`.`NETLAB` = \'",netlab,"\'")
   query <- gsub("'NULL'", "NULL", query, fixed = TRUE)
+  on.exit(dbDisconnect(con))
+  rs = dbSendQuery(con, query);
+  df = fetch(rs, -1);
+  dbClearResult(rs)
+  return(df)
+}
+
+delete_sql <- function(query){
+  
+  con <- dbConnect(MySQL(),
+                   user = USER_MYSQL,
+                   password = PASSWORD_MYSQL,
+                   host = HOST_MYSQL,
+                   dbname = DB_MYSQL, port = PORT_MYSQL)
   on.exit(dbDisconnect(con))
   rs = dbSendQuery(con, query);
   df = fetch(rs, -1);
@@ -325,7 +443,7 @@ metadataAsignar <- function(Corrida, Placa, Oficio){
   con <- dbConnect(MySQL(),
                    user = 'ingreso',
                    password = '123ingreso321',
-                   host = 'localhost',
+                   host = HOST_MYSQL,
                    dbname = 'seqcoviddb')
   query <- paste0("UPDATE `metadata` SET `CORRIDA` = '",
                   Corrida,"', `PLACA` = '",Placa,"' WHERE `OFICIO` = '",Oficio,
@@ -337,7 +455,6 @@ metadataAsignar <- function(Corrida, Placa, Oficio){
   dbClearResult(rs)
   return(df)
 }
-
 
 #DELETE FROM `metadata2` WHERE `metadata2`.`NETLAB` = \'AAA2\'"
 #data <- metadata_sql(corrida = 1028, placa = 'placa1')
