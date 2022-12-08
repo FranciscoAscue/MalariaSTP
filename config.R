@@ -11,15 +11,15 @@ user_base <- tibble::tibble(
   name = c("ADMINISTRADOR", "BRIGADA1", "BRIGADA2","BRIGADA3")
 )
 
-# USER_MYSQL <- "rissatip_admin"
-# PASSWORD_MYSQL <- "satipored2022@@%%&&"
-# HOST_MYSQL <- '157.90.212.15'
-# PORT_MYSQL <- 3306
-# DB_MYSQL <- 'rissatip_dbsatipo'
-
-
-USER_MYSQL <- "admin"
-PASSWORD_MYSQL <- "satipored2022"
-HOST_MYSQL <- 'localhost'
+USER_MYSQL <- "rissatip_admin"
+PASSWORD_MYSQL <- "satipored2022@@%%&&"
+HOST_MYSQL <- '157.90.212.15'
 PORT_MYSQL <- 3306
-DB_MYSQL <- 'dbsatipo'
+DB_MYSQL <- 'rissatip_dbsatipo'
+
+# 
+# USER_MYSQL <- "admin"
+# PASSWORD_MYSQL <- "satipored2022"
+# HOST_MYSQL <- 'localhost'
+# PORT_MYSQL <- 3306
+# DB_MYSQL <- 'dbsatipo'
