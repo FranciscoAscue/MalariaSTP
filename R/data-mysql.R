@@ -158,8 +158,6 @@ freq_voc_voi <- function(data, lin){
 }
 
 ## data from MySQL
-##SELECT LOCALIDAD,COUNT(LOCALIDAD) AS N FROM `epidemiodb` WHERE YEAR = 2022 GROUP BY LOCALIDAD
-
 metadata <- function(tabla, fxd = FALSE){
   
   con <- dbConnect(MySQL(),
@@ -231,8 +229,6 @@ localidades_mysql <- function(prioritario, distrito){
   dbClearResult(rs)
   return(df)
 }
-
-
 
 VA_sql <- function(distrito, fecha, eess, localidad, colecta,
                    iphh, iphn, cespecie, hcolecta, especie,
@@ -363,7 +359,6 @@ CL_sql <- function(distrito, eess, localidad, clasificacion,
   return(df)
 }
 
-
 vectorAdulto_mysql <- function(distrito, localidad, eess, start, end){
   con <- dbConnect(MySQL(),
                    user = USER_MYSQL,
@@ -430,31 +425,4 @@ delete_sql <- function(query){
   return(df)
 }
 
-enumerar <- function(netlab_list, max){
-  n = max + 1
-  for( i in netlab_list){
-    metadata_setnumber(i, n)
-    n = n + 1
-  }
-}
 
-metadataAsignar <- function(Corrida, Placa, Oficio){
-  
-  con <- dbConnect(MySQL(),
-                   user = 'ingreso',
-                   password = '123ingreso321',
-                   host = HOST_MYSQL,
-                   dbname = 'seqcoviddb')
-  query <- paste0("UPDATE `metadata` SET `CORRIDA` = '",
-                  Corrida,"', `PLACA` = '",Placa,"' WHERE `OFICIO` = '",Oficio,
-                  "' AND `DNI_CE` IS NOT NULL AND `PLACA` IS NULL AND `CORRIDA` IS NULL ORDER BY `metadata`.`FECHA_INGRESO_BASE` ASC;")
-  query <- gsub("'NULL'", "NULL", query, fixed = TRUE)
-  on.exit(dbDisconnect(con))
-  rs = dbSendQuery(con, query);
-  df = fetch(rs, -1);
-  dbClearResult(rs)
-  return(df)
-}
-
-#DELETE FROM `metadata2` WHERE `metadata2`.`NETLAB` = \'AAA2\'"
-#data <- metadata_sql(corrida = 1028, placa = 'placa1')

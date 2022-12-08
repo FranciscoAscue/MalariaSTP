@@ -3,26 +3,6 @@ source("R/ui-panel.R", local = TRUE)
 source("R/data-mysql.R", local = TRUE)
 source("config.R", local = TRUE)
 
-
-create_btns <- function(x) {
-  x %>% purrr::map_chr(~
-                         paste0(
-                           '<div class = "btn-group">
-                   <button class="btn btn-default action-button btn-danger action_button" id="delete_',
-                           .x, '" type="button" onclick=get_id(this.id)><i class="fa fa-trash-alt"></i></button></div>'
-                         ))
-}
-
-create_btnsL <- function(x) {
-  x %>% purrr::map_chr(~
-                         paste0(
-                           '<div class = "btn-group">
-                   <button class="btn btn-default action-button btn-danger action_button" id="deleteL_',
-                           .x, '" type="button" onclick=get_id(this.id)><i class="fa fa-trash-alt"></i></button></div>'
-                         ))
-}
-
-
 ui <- fluidPage( title = "MalariaSTP",  
                  div(class = "pull-right", shinyauthr::logoutUI(id = "logout")),
                  
@@ -148,7 +128,7 @@ server <- function(input, output, session) {
     #eess <- read.csv("Data/EESSsatipo.csv")
     eess <- metadata(tabla = "satipoeess", fxd = TRUE)
     if(input$sele != "TOTAL" ){
-      eess <- eess %>% filter(DISTRITO %in% input$sele)
+      eess <- eess %>% dplyr::filter(DISTRITO %in% input$sele)
     }
     return(eess)
   })
@@ -184,85 +164,7 @@ server <- function(input, output, session) {
       
       title = tags$div(tags$h4("LOCALIDAD :", input$localidadAdulto),
                        tags$h5("ESS:", input$eessAdulto)),
-      column(12, h1(" ")),
-      column(12, style = "background-color:#F4F6F6;",
-             column(6,
-                    dateInput(inputId = "fecha_tm",
-                              label = "Fecha de toma de muestra",
-                              language = "es", min = "2020-01-01", max = "2023-05-28"
-                    )),
-             column(6,
-                    selectInput(inputId = "tcolecta",
-                                label = "Selecciona tipo de colecta",
-                                choices = c( "INTRADOMICILIO",
-                                             "PERIDOMICILIO",
-                                             "EXTRADOMICILIO","NULL"),
-                                selected = "INTRADOMICILIO")),
-      ),
-      column(12, style = "background-color:#F4F6F6;",#82E0AA 
-             column(6,
-                    numericInput(inputId = "iphh",
-                                 label = "Ingresar IPHH",
-                                 value = "0.01", min = 0,
-                                 step = 0.01 , 
-                                 width = "200px")),
-             column(6,
-                    numericInput(inputId = "iphn",
-                                 label = "Ingresar IPHN",
-                                 value = "0.01", min = 0,
-                                 step = 0.01 ,
-                                 width = "200px")),
-      ),
-      column(12, style = "background-color:#F4F6F6;",#82E0AA 
-             column(6,
-                    numericInput(inputId = "nespecies",
-                                 label = "Ingresar N° Especies",
-                                 value = 1, min = 0,
-                                 width = "200px")),
-             column(6,
-                    numericInput(inputId = "horascolecta",
-                                 label = "Ingresar Horas de colecta",
-                                 value = 1, min = 0,
-                                 width = "200px")),
-      ),
-      column(12, style = "background-color:#F4F6F6;",#82E0AA 
-             column(6,
-                    selectInput(inputId = "especie",
-                                label = "Selecciona especie predominante",
-                                choices = c( "Culex spp",
-                                             "Anopheles spp",
-                                             "NULL"),
-                                selected = "NULL")),
-             column(6,
-                    numericInput(inputId = "ncolecta",
-                                 label = "Ingresar #N colectados",
-                                 value = 1, min = 0,
-                                 width = "200px")),
-      ),column(12, style = "background-color:#F4F6F6;",#82E0AA 
-               column(6,
-                      numericInput(inputId = "temperatura",
-                                   label = "Ingresar temperatura(celsius)",
-                                   value = 25, min = 0,
-                                   width = "200px")),
-               column(6,
-                      numericInput(inputId = "hr",
-                                   label = "Ingresar humedad relativa (%)",
-                                   value = 60, min = 0,
-                                   width = "200px")),
-      ),column(12, style = "background-color:#F4F6F6;",#82E0AA 
-               column(6,
-                      numericInput(inputId = "norteA",
-                                   label = "Ingresar Coordenas de Longitud",
-                                   value = -11.0001, max = 0,
-                                   step = 0.0001 ,
-                                   width = "200px")),
-               column(6,
-                      numericInput(inputId = "esteA",
-                                   label = "Ingresar Coordenas de Latitud",
-                                   value = -74.0001, max = 0,
-                                   step = 0.0001 ,
-                                   width = "200px")),
-      ),column(12, h3(" ")), easyClose = FALSE,
+      sqlVectorAdultForm(), easyClose = FALSE,
       footer = div(
         shiny::actionButton(inputId = "final_inputA",
                             label   = "Ingresar",
@@ -325,75 +227,7 @@ server <- function(input, output, session) {
       
       title = tags$div(tags$h4("LOCALIDAD :", input$localidadLarva),
                        tags$h5("ESS:", input$eessLarva)),
-      column(12, h1(" ")),
-      column(12, style = "background-color:#F4F6F6;",
-             column(6,
-                    selectInput(inputId = "clasificacionCriadero",
-                                label = "Clasificacion de Criadero",
-                                choices =  clasificacion$CLASIFICACION,
-                                selected = "ACEQUIA")),
-             column(6,
-                    selectInput(inputId = "tipoCriadero",
-                                label = "Tipo de Criadero",
-                                choices =  c("TEMPORAL","PERMANENTE"),
-                                selected = "TEMPORAL")),
-      ),
-      column(12, style = "background-color:#F4F6F6;",#82E0AA 
-             column(6,
-                    numericInput(inputId = "extension",
-                                 label = "Ingresar Extensión (m2)",
-                                 value = 10, min = 0,
-                                 width = "200px")),
-             column(6,
-                    selectInput(inputId = "metodo",
-                                label = "Método de Intervención",
-                                choices =  c("FISICO","QUIMICO","BIOLOGICO"),
-                                selected = "FISICO")),
-      ),
-      column(12, style = "background-color:#F4F6F6;",#82E0AA 
-             column(6,
-                    numericInput(inputId = "larvicida",
-                                 label = "Ingresar Larvicida (g)",
-                                 value = NULL, min = 0,
-                                 width = "200px")),
-             column(6,
-                    selectInput(inputId = "especieL",
-                                label = "Especie identificada",
-                                choices =  c("Anopheles spp","Culex spp"),
-                                selected = "Culex spp")),
-      ),
-      column(12, style = "background-color:#F4F6F6;",#82E0AA 
-             column(6,
-                    numericInput(inputId = "il_pre",
-                                 label = "Indice Larvario Pre-Intervencion",
-                                 value = "0.01", min = 0,
-                                 step = 0.01 ,
-                                 width = "200px")),
-             column(6,
-                    numericInput(inputId = "il_post",
-                                 label = "Indice Larvario Post-Intervencion",
-                                 value = "0.01", min = 0,
-                                 step = 0.01 ,
-                                 width = "200px")),
-      ),column(12, style = "background-color:#F4F6F6;",#82E0AA 
-               column(6,
-                      numericInput(inputId = "norteL",
-                                   label = "Coordenas de Longitud",
-                                   value = -11.0001, max = 0,
-                                   step = 0.0001 ,
-                                   width = "200px")),
-               column(6,
-                      numericInput(inputId = "esteL",
-                                   label = "Coordenas de Latitud",
-                                   value = -74.0001, max = 0,
-                                   step = 0.0001 ,
-                                   width = "200px")),
-      ),column(12, 
-               column(6, dateInput(inputId = "fecha_l",
-                                   label = "Fecha de colecta",
-                                   language = "es", min = "2020-01-01", max = "2023-05-28"
-               ))),
-      column(12, h3(" ")), easyClose = FALSE,
+      sqlLarvaForm(clasificacion), easyClose = FALSE,
       footer = div(
         shiny::actionButton(inputId = "final_inputL",
                             label   = "Ingresar",
@@ -420,12 +254,12 @@ server <- function(input, output, session) {
     tmp1 <- input$DaterangeA[1]
     tmp2 <- input$DaterangeA[2]
     
-    updateDateRangeInput(session, "DaterangeA",
+    shiny::updateDateRangeInput(session, "DaterangeA",
                          label = "DaterangeA",
                          start = "2021-09-01",
                          end = "2023-12-31")
     
-    updateDateRangeInput(session, "DaterangeA",
+    shiny::updateDateRangeInput(session, "DaterangeA",
                          label = "DaterangeA",
                          start = tmp1,
                          end = tmp2)
@@ -460,12 +294,12 @@ server <- function(input, output, session) {
     tmp1 <- input$DaterangeA[1]
     tmp2 <- input$DaterangeA[2]
     
-    updateDateRangeInput(session, "DaterangeA",
+    shiny::updateDateRangeInput(session, "DaterangeA",
                          label = "DaterangeA",
                          start = "2021-09-01",
                          end = "2023-12-31")
     
-    updateDateRangeInput(session, "DaterangeA",
+    shiny::updateDateRangeInput(session, "DaterangeA",
                          label = "DaterangeA",
                          start = tmp1,
                          end = tmp2)
@@ -499,12 +333,12 @@ server <- function(input, output, session) {
     tmp1 <- input$DaterangeA[1]
     tmp2 <- input$DaterangeA[2]
     
-    updateDateRangeInput(session, "DaterangeA",
+    shiny::updateDateRangeInput(session, "DaterangeA",
                          label = "DaterangeA",
                          start = "2021-09-01",
                          end = "2023-12-31")
     
-    updateDateRangeInput(session, "DaterangeA",
+    shiny::updateDateRangeInput(session, "DaterangeA",
                          label = "DaterangeA",
                          start = tmp1,
                          end = tmp2)
@@ -549,7 +383,7 @@ server <- function(input, output, session) {
   
   dataplot2 <- reactive({
     a<- read.csv("Data/CentrosPobladosSatipo.csv")
-    a <- a %>% filter(DEPARTAMENTO == "SAN MARTIN")
+    a <- a %>% dplyr::filter(DEPARTAMENTO == "SAN MARTIN")
   })
   
   
@@ -582,7 +416,7 @@ server <- function(input, output, session) {
   output$distritoG <- renderUI({
     
     distritos <- metadata(tabla = "satipodistritos", fxd = TRUE)
-    selectInput(inputId = "distrito",
+    shiny::selectInput(inputId = "distrito",
                 label = "Selecciona Distrito",
                 choices = distritos$DISTRITOS,
                 selected = "RIO TAMBO")
@@ -597,7 +431,7 @@ server <- function(input, output, session) {
     if(is.null(input$distrito))
       return()
     localidades <- renderUILocalidades() %>% dplyr::filter(DISTRITO == input$distrito)
-    selectInput(inputId = "localidadAdulto",
+    shiny::selectInput(inputId = "localidadAdulto",
                 label = "Seleccione Localidad",
                 choices = localidades$LOCALIDAD,
                 selected = "VALLE ESMERALDA")
@@ -608,7 +442,7 @@ server <- function(input, output, session) {
       return()
     req(input$localidadAdulto)
     eess <- renderUILocalidades() %>% dplyr::filter(LOCALIDAD == input$localidadAdulto)
-    selectInput(inputId = "eessAdulto",
+    shiny::selectInput(inputId = "eessAdulto",
                 label = "Establecimiento de Salud",
                 choices = eess$EESS,
                 selected = "VALLE ESMERALDA")
@@ -618,7 +452,7 @@ server <- function(input, output, session) {
     if(is.null(input$distrito))
       return()
     localidades <- renderUILocalidades() %>% dplyr::filter(DISTRITO == input$distrito)
-    selectInput(inputId = "localidadLarva",
+    shiny::selectInput(inputId = "localidadLarva",
                 label = "Seleccione Localidad",
                 choices = localidades$LOCALIDAD,
                 selected = "VALLE ESMERALDA")
@@ -629,7 +463,7 @@ server <- function(input, output, session) {
       return()
     req(input$localidadLarva)
     eess <- renderUILocalidades() %>% dplyr::filter(LOCALIDAD == input$localidadLarva)
-    selectInput(inputId = "eessLarva",
+    shiny::selectInput(inputId = "eessLarva",
                 label = "Establecimiento de Salud",
                 choices = eess$EESS,
                 selected = "VALLE ESMERALDA")
@@ -638,79 +472,23 @@ server <- function(input, output, session) {
   #### Add tabset Panel
   observeEvent(input$sele,{
     if(credentials()$info[3] == "admin"){
-      
-      appendTab(inputId = "navPrincipal", 
-                tabPanel(title = h5(icon("chart-pie")," Estadisticas"),
-                         plotly::plotlyOutput("stack"),
-                         plotly::plotlyOutput("stack2")
-                ))
+      appendTab(inputId = "navPrincipal",
+                adminPanelStats)
     }
     
   }, once = TRUE)
   
   observeEvent(input$distrito,{
-    
     if(credentials()$info[3] == "admin"){
-      appendTab(inputId = "navPrincipal", 
-                tabPanel(title = h5(icon("map")," Maps"), 
-                         tags$style(type = "text/css", "#map {height: calc(100vh - 100px) !important;}"),
-                         leafletOutput("map", width = "100%"),
-                         tags$style("
-                                          #controls {
-                                            background-color: #f1ecec;
-                                            opacity: 0.5;
-                                          }
-                                          #controls:hover{
-                                            opacity: 1;
-                                          }
-                                                 "),
-                         absolutePanel(id = "controls", class = "panel panel-default",
-                                       top = 100, left = 75, width = 380, fixed=TRUE,
-                                       draggable = TRUE, height = "auto",
-                                       
-                                       span(tags$i(h5("Reporte de casos de malaria por distrito")), style="color:#045a8d", align = "center"),
-                                       column(12,
-                                              
-                                              column( 8,
-                                                      selectInput("sele", label = h5("Seleciona Distrito"),
-                                                                  choices = c("TOTAL","LLAYLLA","PANGOA","PAMPA HERMOSA","COVIRIALI","MAZAMARI",
-                                                                              "VIZCATAN DEL ENE","SATIPO","RIO NEGRO","RIO TAMBO" ),
-                                                                  selected = "TOTAL", multiple = TRUE)),
-                                              column( 4, 
-                                                      numericInput("year", label = h5("Año"),
-                                                                   min = 2016, max = 2023, value = 2022
-                                                      )
-                                              )
-                                       ),
-                                       column(12,
-                                              plotly::plotlyOutput("bar", height = 200))
-                         ),
-                )
-      )}
+      appendTab(inputId = "navPrincipal",
+                adminPanelmaps)
+      }
   }, once = TRUE)
   
   observeEvent(input$sele,{
     if(credentials()$info[3] == "admin"){
       appendTab(inputId = "tablesdb",
-                
-                tabPanel(title = "LOCALIDADES",
-                         column(12, h2(" ")),
-                         column(12,
-                                
-                                column(3,selectInput(inputId = "prioritarios",
-                                                     label = "LOCALIDAD",
-                                                     choices = c("PRIORITARIOS","NO PRIORITARIOS"),
-                                                     selected = "PRIORITARIOS"))
-                                
-                         ),
-                         column(12, h2(" ")),
-                         column(10,offset = 1,
-                                shinycssloaders::withSpinner(
-                                  DT::dataTableOutput("tablaLocalidades"), 
-                                  type = 3, color.background = "white", color = "blue")
-                         )
-                )
-      )
+                adminPanelLocalidad)
     }
   }, once = TRUE)
   
