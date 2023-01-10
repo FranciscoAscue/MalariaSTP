@@ -1,5 +1,4 @@
 source("config.R", local = TRUE)
-
 library(RMySQL)
 
 variant_distribution <- function(map, metadata, epidem,  mindate, maxdate, switch = "VocVoi"){
@@ -382,22 +381,6 @@ criadero_mysql <- function(distrito, localidad, eess, start, end){
                  localidad,"' AND `EESS` = '",eess,"' AND `FECHA` BETWEEN '",start,"' AND '",end,"';")
   
   dbSendQuery(con, "SET NAMES utf8mb4;")
-  on.exit(dbDisconnect(con))
-  rs = dbSendQuery(con, query);
-  df = fetch(rs, -1);
-  dbClearResult(rs)
-  return(df)
-}
-
-metadata_setnumber <- function(netlab, number){
-  con <- dbConnect(MySQL(),
-                   user = 'ingreso',
-                   password = '123ingreso321',
-                   host = HOST_MYSQL,
-                   dbname = 'seqcoviddb')
-  query <- paste0("UPDATE `metadata` SET `NUMERACION_PLACA` = '",
-                  number,"' WHERE `metadata`.`NETLAB` = \'",netlab,"\'")
-  query <- gsub("'NULL'", "NULL", query, fixed = TRUE)
   on.exit(dbDisconnect(con))
   rs = dbSendQuery(con, query);
   df = fetch(rs, -1);

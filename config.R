@@ -1,5 +1,5 @@
 ### local host and port
-# options( shiny.host = '192.168.5.186' )
+### options( shiny.host = '192.168.1.7' )
 # options( shiny.port = 8585 )
 #options( shiny.maxRequestSize = 100*1024^2 ) 
 
@@ -10,7 +10,7 @@ user_base <- tibble::tibble(
   permissions = c("admin","standard","standard","standard"),
   name = c("ADMINISTRADOR", "BRIGADA1", "BRIGADA2","BRIGADA3")
 )
-
+# 
 USER_MYSQL <- "rissatip_admin"
 PASSWORD_MYSQL <- "satipored2022@@%%&&"
 HOST_MYSQL <- '157.90.212.15'

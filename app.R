@@ -145,7 +145,7 @@ server <- function(input, output, session) {
     map <- Location()
     data <- epidemio()# %>% dplyr::group_by(DISTRITO) %>% dplyr::summarise(n = n())
     colnames(data) <- c("NOMBDIST", "N")
-    PALETA <- colorNumeric(palette = "Reds", NULL)
+    PALETA <- colorNumeric(palette = "Greens", NULL)
     daata <- merge(data, map, by = "NOMBDIST")
     daata <- sf::st_as_sf(daata)
     if(input$sele != "TOTAL"){
@@ -348,7 +348,8 @@ server <- function(input, output, session) {
   ### Output graph
   
   output$map <- renderLeaflet({
-    basemap <- leaflet(maps()$map, height = "100%") %>% 
+    tryCatch({
+    basemap <- leaflet::leaflet(maps()$map, height = "100%") %>% 
       addTiles(group = "OSM (default)")%>%
       addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
       addOpenweatherTiles(layers = "rain", apikey =  "d67a709b54e08178716c6f441b26233c", group = "Lluvias" ) %>%
@@ -369,6 +370,17 @@ server <- function(input, output, session) {
         overlayGroups = c("Localidades", "EESS"),
         options = layersControlOptions(collapsed = FALSE)
       )
+    }, 
+    
+    error = function(e){
+      showModal(
+        modalDialog(
+          title = "DNI DUPLICADO!",
+          tags$i("Revise si el paciente fue ingresado previamente"),br(),br(),
+          tags$code(e$message)
+        )
+      )
+    })
   })
   
   dataplot <- reactive({

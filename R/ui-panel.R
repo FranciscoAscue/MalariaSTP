@@ -120,7 +120,13 @@ adminPanelmaps <- tabPanel(title = h5(icon("map")," Maps"),
                                                 )
                                          ),
                                          column(12,
-                                                plotly::plotlyOutput("bar", height = 200))
+                                                plotly::plotlyOutput("bar", height = 200)),
+                                         column(12, 
+                                                dateRangeInput("DaterangePanel", 
+                                                               "Seleccione Fecha", 
+                                                               start  = "2022-09-01",
+                                                               end    = "2022-12-01")
+                                                )
                            ),
 )
 
